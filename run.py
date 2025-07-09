@@ -16,6 +16,7 @@ from preprocessing.btc import btc_load
 from preprocessing.dataset import Dataset, DataModule
 import constants as cst
 from constants import DatasetType, SamplingType
+from preprocessing.sbi import sbi_load
 torch.serialization.add_safe_globals([omegaconf.listconfig.ListConfig])
 
 
@@ -151,6 +152,20 @@ def train(config: Config, trainer: L.Trainer, run=None):
             test_batch_size=config.dataset.batch_size*4,
             num_workers=4
         )
+    elif dataset_type == "SBI":
+        # Path to SBI CSV (update as needed for Colab)
+        path = "content/combined_output_week_20.csv"
+        test_input, test_labels = sbi_load(path, seq_size, horizon, config.model.hyperparameters_fixed["all_features"])
+        test_set = Dataset(test_input, test_labels, seq_size)
+        data_module = DataModule(
+            train_set=None,
+            val_set=None,
+            test_set=test_set,
+            batch_size=config.dataset.batch_size,
+            test_batch_size=config.dataset.batch_size*4,
+            num_workers=4
+        )
+        test_loaders = [data_module.test_dataloader()]
     else:
         raise ValueError(f"Unknown dataset type: {dataset_type}")
     
