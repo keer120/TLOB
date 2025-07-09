@@ -70,6 +70,12 @@ class BTC(Dataset):
     testing_stocks: list = field(default_factory=lambda: ["BTC"])
 
 @dataclass
+class COMBINED(Dataset):
+    type: DatasetType = DatasetType.COMBINED
+    dates: list = field(default_factory=lambda: ["2025-05-12"])
+    batch_size: int = 64
+
+@dataclass
 class Experiment:
     is_data_preprocessed: bool = False
     is_wandb: bool = True
@@ -105,3 +111,4 @@ cs.store(group="model", name="deeplob", node=DeepLOB)
 cs.store(group="dataset", name="lobster", node=LOBSTER)
 cs.store(group="dataset", name="fi_2010", node=FI_2010)
 cs.store(group="dataset", name="btc", node=BTC)
+cs.store(group="dataset", name="combined", node=COMBINED)

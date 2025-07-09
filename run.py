@@ -13,12 +13,12 @@ from models.engine import Engine
 from preprocessing.fi_2010 import fi_2010_load
 from preprocessing.lobster import lobster_load
 from preprocessing.btc import btc_load
+from preprocessing.combined import combined_load
 from preprocessing.dataset import Dataset, DataModule
 import constants as cst
 from constants import DatasetType, SamplingType
 from preprocessing.sbi import sbi_load
 torch.serialization.add_safe_globals([omegaconf.listconfig.ListConfig])
-
 
 def run(config: Config, accelerator):
     seq_size = config.model.hyperparameters_fixed["seq_size"]
@@ -45,7 +45,6 @@ def run(config: Config, accelerator):
     )
     train(config, trainer)
 
-
 def train(config: Config, trainer: L.Trainer, run=None):
     print_setup(config)
     dataset_type = config.dataset.type.value
@@ -54,7 +53,6 @@ def train(config: Config, trainer: L.Trainer, run=None):
     model_type = config.model.type
     checkpoint_ref = config.experiment.checkpoint_reference
     checkpoint_path = os.path.join(cst.DIR_SAVED_MODEL, model_type.value, checkpoint_ref)
-    dataset_type = config.dataset.type.value
     if dataset_type == "FI_2010":
         path = cst.DATA_DIR + "/FI_2010"
         train_input, train_labels, val_input, val_labels, test_input, test_labels = fi_2010_load(path, seq_size, horizon, config.model.hyperparameters_fixed["all_features"])
@@ -94,7 +92,6 @@ def train(config: Config, trainer: L.Trainer, run=None):
             test_batch_size=config.dataset.batch_size*4,
             num_workers=4
         ) 
-
         test_loaders = [data_module.test_dataloader()]
         
     elif dataset_type == "LOBSTER":
@@ -166,6 +163,26 @@ def train(config: Config, trainer: L.Trainer, run=None):
             num_workers=4
         )
         test_loaders = [data_module.test_dataloader()]
+    elif dataset_type == "COMBINED":
+        train_input, train_labels = combined_load(cst.DATA_DIR + "/COMBINED/train.npy", cst.LEN_SMOOTH, horizon, seq_size)
+        val_input, val_labels = combined_load(cst.DATA_DIR + "/COMBINED/val.npy", cst.LEN_SMOOTH, horizon, seq_size)
+        test_input, test_labels = combined_load(cst.DATA_DIR + "/COMBINED/test.npy", cst.LEN_SMOOTH, horizon, seq_size)
+        train_set = Dataset(train_input, train_labels, seq_size)
+        val_set = Dataset(val_input, val_labels, seq_size)
+        test_set = Dataset(test_input, test_labels, seq_size)
+        if config.experiment.is_debug:
+            train_set.length = 1000
+            val_set.length = 1000
+            test_set.length = 10000
+        data_module = DataModule(
+            train_set=train_set,
+            val_set=val_set,
+            test_set=test_set,
+            batch_size=config.dataset.batch_size,
+            test_batch_size=config.dataset.batch_size*4,
+            num_workers=4
+        )
+        test_loaders = [data_module.test_dataloader()]
     else:
         raise ValueError(f"Unknown dataset type: {dataset_type}")
     
@@ -176,9 +193,9 @@ def train(config: Config, trainer: L.Trainer, run=None):
     print("Train set shape: ", train_input.shape)
     print("Val set shape: ", val_input.shape)
     print("Test set shape: ", test_input.shape)
-    print(f"Classes distribution in train set: up {(counts_train[1][0].item()/train_labels.shape[0]):.2f} stat {(counts_train[1][1].item()/train_labels.shape[0]):.2f} down {(counts_train[1][2].item()/train_labels.shape[0]):.2f} ", )
-    print(f"Classes distribution in val set: up {(counts_val[1][0].item()/val_labels.shape[0]):.2f} stat {(counts_val[1][1].item()/val_labels.shape[0]):.2f} down {(counts_val[1][2].item()/val_labels.shape[0]):.2f} ", )
-    print(f"Classes distribution in test set: up {(counts_test[1][0].item()/test_labels.shape[0]):.2f} stat {(counts_test[1][1].item()/test_labels.shape[0]):.2f} down {(counts_test[1][2].item()/test_labels.shape[0]):.2f} ", )
+    print(f"Classes distribution in train set: up {(counts_train[1][0].item()/train_labels.shape[0]):.2f} stat {(counts_train[1][1].item()/train_labels.shape[0]):.2f} down {(counts_train[1][2].item()/train_labels.shape[0]):.2f} ")
+    print(f"Classes distribution in val set: up {(counts_val[1][0].item()/val_labels.shape[0]):.2f} stat {(counts_val[1][1].item()/val_labels.shape[0]):.2f} down {(counts_val[1][2].item()/val_labels.shape[0]):.2f} ")
+    print(f"Classes distribution in test set: up {(counts_test[1][0].item()/test_labels.shape[0]):.2f} stat {(counts_test[1][1].item()/test_labels.shape[0]):.2f} down {(counts_test[1][2].item()/test_labels.shape[0]):.2f} ")
     print()
     
     experiment_type = config.experiment.type
@@ -279,7 +296,7 @@ def train(config: Config, trainer: L.Trainer, run=None):
                 model_type=config.model.type.value,
                 is_wandb=config.experiment.is_wandb,
                 experiment_type=experiment_type,
-                lr=config.model.hyperparameters_fixed["lr"],
+                lr= config.model.hyperparameters_fixed["lr"],
                 optimizer=config.experiment.optimizer,
                 dir_ckpt=config.experiment.dir_ckpt,
                 hidden_dim=config.model.hyperparameters_fixed["hidden_dim"],
@@ -358,6 +375,8 @@ def train(config: Config, trainer: L.Trainer, run=None):
                 run.log({f"f1 {testing_stocks[i]} best": output[0]["f1_score"]}, commit=False)
             elif run is not None and dataset_type == "FI_2010":
                 run.log({f"f1 FI_2010 ": output[0]["f1_score"]}, commit=False)
+            elif run is not None and dataset_type == "COMBINED":
+                run.log({f"f1 COMBINED best": output[0]["f1_score"]}, commit=False)
     else:
         for i in range(len(test_loaders)):
             test_dataloader = test_loaders[i]
@@ -366,8 +385,8 @@ def train(config: Config, trainer: L.Trainer, run=None):
                 run.log({f"f1 {testing_stocks[i]} best": output[0]["f1_score"]}, commit=False)
             elif run is not None and dataset_type == "FI_2010":
                 run.log({f"f1 FI_2010 ": output[0]["f1_score"]}, commit=False)
-            
-    
+            elif run is not None and dataset_type == "COMBINED":
+                run.log({f"f1 COMBINED best": output[0]["f1_score"]}, commit=False)
 
 def run_wandb(config: Config, accelerator):
     def wandb_sweep_callback():
@@ -385,7 +404,7 @@ def run_wandb(config: Config, accelerator):
                 else:
                     run_name += str(param[:2]) + "_" + str(value.value) + "_"
 
-        run = wandb.init(project=cst.PROJECT_NAME, name=run_name, entity="") # set entity to your wandb username
+        run = wandb.init(project=cst.PROJECT_NAME, name=run_name, entity="")
         
         if config.experiment.is_sweep:
             model_params = run.config
@@ -414,7 +433,7 @@ def run_wandb(config: Config, accelerator):
             precision=cst.PRECISION,
             max_epochs=config.experiment.max_epochs,
             callbacks=[
-            EarlyStopping(monitor="val_loss", mode="min", patience=1, verbose=True, min_delta=0.002),
+                EarlyStopping(monitor="val_loss", mode="min", patience=1, verbose=True, min_delta=0.002),
                 TQDMProgressBar(refresh_rate=1000)
             ],
             num_sanity_val_steps=0,
@@ -423,7 +442,6 @@ def run_wandb(config: Config, accelerator):
             check_val_every_n_epoch=1,
         )
 
-        # log simulation details in WANDB console
         run.log({"model": config.model.type.value}, commit=False)
         run.log({"dataset": config.dataset.type.value}, commit=False)
         run.log({"seed": config.experiment.seed}, commit=False)
@@ -442,10 +460,8 @@ def run_wandb(config: Config, accelerator):
         run.finish()
 
     return wandb_sweep_callback
-  
-    
+
 def sweep_init(config: Config):
-    # put your wandb key here
     wandb.login("")
     parameters = {}
     for key in config.model.hyperparameters_sweep.keys():
@@ -466,7 +482,6 @@ def sweep_init(config: Config):
     }
     return sweep_config
 
-
 def print_setup(config: Config):
     print("Model type: ", config.model.type)
     print("Dataset: ", config.dataset.type)
@@ -482,4 +497,3 @@ def print_setup(config: Config):
     if config.dataset.type == cst.DatasetType.LOBSTER:
         print("Training stocks: ", config.dataset.training_stocks)
         print("Testing stocks: ", config.dataset.testing_stocks)
-
