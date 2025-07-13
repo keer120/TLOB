@@ -9,6 +9,14 @@ class DatasetType(Enum):
     SBI = "SBI"
     COMBINED = "COMBINED"
 
+# Backward compatibility for old checkpoints
+class DatasetEnum(Enum):
+    LOBSTER = "LOBSTER"
+    FI_2010 = "FI_2010"
+    BTC = "BTC"
+    SBI = "SBI"
+    COMBINED = "COMBINED"
+
 class ModelType(Enum):
     MLPLOB = "MLPLOB"
     TLOB = "TLOB"

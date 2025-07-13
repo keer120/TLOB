@@ -17,8 +17,8 @@ from preprocessing.sbi import sbi_load
 from preprocessing.combined import combined_load
 from preprocessing.dataset import Dataset, DataModule
 import constants as cst
-from constants import DatasetType, SamplingType
-torch.serialization.add_safe_globals([omegaconf.listconfig.ListConfig])
+from constants import DatasetType, SamplingType, DatasetEnum
+torch.serialization.add_safe_globals([omegaconf.listconfig.ListConfig, DatasetEnum])
 
 def run(config: Config, accelerator):
     seq_size = config.model.hyperparameters_fixed["seq_size"]
