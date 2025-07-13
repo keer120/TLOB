@@ -233,9 +233,9 @@ def train(config: Config, trainer: L.Trainer, run=None):
     experiment_type = config.experiment.type
     if "FINETUNING" in experiment_type or "EVALUATION" in experiment_type:
         if checkpoint_ref != "":
-            checkpoint = torch.load(checkpoint_path, map_location=cst.DEVICE, weights_only=True)
+            checkpoint = torch.load(checkpoint_path, map_location=cst.DEVICE)
             
-        print("Loading model from checkpoint: ", config.experiment.checkpoint_reference) 
+        print("Loading model from checkpoint: ", config.experiment.checkpoint_reference)
         lr = checkpoint["hyper_parameters"]["lr"]
         dir_ckpt = checkpoint["hyper_parameters"]["dir_ckpt"]
         hidden_dim = checkpoint["hyper_parameters"]["hidden_dim"]
