@@ -13,6 +13,7 @@ from models.engine import Engine
 from preprocessing.fi_2010 import fi_2010_load
 from preprocessing.lobster import lobster_load
 from preprocessing.btc import btc_load
+from preprocessing.sbi import sbi_load
 from preprocessing.dataset import Dataset, DataModule
 import constants as cst
 from constants import DatasetType, SamplingType
@@ -94,6 +95,26 @@ def train(config: Config, trainer: L.Trainer, run=None):
             num_workers=4
         ) 
 
+        test_loaders = [data_module.test_dataloader()]
+        
+    elif dataset_type == "SBI":
+        path = cst.DATA_DIR + "/SBI"
+        train_input, train_labels, val_input, val_labels, test_input, test_labels = sbi_load(path, seq_size, horizon, config.model.hyperparameters_fixed["all_features"])
+        train_set = Dataset(train_input, train_labels, seq_size)
+        val_set = Dataset(val_input, val_labels, seq_size)
+        test_set = Dataset(test_input, test_labels, seq_size)
+        if config.experiment.is_debug:
+            train_set.length = 1000
+            val_set.length = 1000
+            test_set.length = 10000
+        data_module = DataModule(
+            train_set=Dataset(train_input, train_labels, seq_size),
+            val_set=Dataset(val_input, val_labels, seq_size),
+            test_set=Dataset(test_input, test_labels, seq_size),
+            batch_size=config.dataset.batch_size,
+            test_batch_size=config.dataset.batch_size*4,
+            num_workers=4
+        )
         test_loaders = [data_module.test_dataloader()]
         
     elif dataset_type == "LOBSTER":
