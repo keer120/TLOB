@@ -81,6 +81,30 @@ def sbi_load(path, seq_size, horizon, all_features):
     # For horizon 10, we'll use a simple approach: compare current mid-price with future mid-price
     labels = np.zeros(len(mid_price) - horizon)
     
+    # Calculate some statistics for debugging
+    price_changes = []
+    for i in range(len(mid_price) - horizon):
+        current_price = mid_price[i]
+        future_price = mid_price[i + horizon]
+        pct_change = (future_price - current_price) / current_price
+        price_changes.append(pct_change)
+    
+    # Print some statistics about price changes
+    price_changes = np.array(price_changes)
+    print(f"SBI Dataset Price Change Statistics:")
+    print(f"  Mean: {np.mean(price_changes):.6f}")
+    print(f"  Std: {np.std(price_changes):.6f}")
+    print(f"  Min: {np.min(price_changes):.6f}")
+    print(f"  Max: {np.max(price_changes):.6f}")
+    print(f"  Percentiles: 1%={np.percentile(price_changes, 1):.6f}, 99%={np.percentile(price_changes, 99):.6f}")
+    
+    # Use more reasonable thresholds based on the data
+    # Use 1st and 99th percentiles as thresholds
+    up_threshold = np.percentile(price_changes, 66)  # Top 33%
+    down_threshold = np.percentile(price_changes, 34)  # Bottom 33%
+    
+    print(f"  Using thresholds: up > {up_threshold:.6f}, down < {down_threshold:.6f}")
+    
     for i in range(len(mid_price) - horizon):
         current_price = mid_price[i]
         future_price = mid_price[i + horizon]
@@ -89,12 +113,16 @@ def sbi_load(path, seq_size, horizon, all_features):
         pct_change = (future_price - current_price) / current_price
         
         # Define thresholds for classification
-        if pct_change > 0.001:  # Up movement (>0.1%)
+        if pct_change > up_threshold:  # Up movement
             labels[i] = 0
-        elif pct_change < -0.001:  # Down movement (<-0.1%)
+        elif pct_change < down_threshold:  # Down movement
             labels[i] = 2
         else:  # Stationary
             labels[i] = 1
+    
+    # Print label distribution
+    unique_labels, label_counts = np.unique(labels, return_counts=True)
+    print(f"  Label distribution: {dict(zip(unique_labels, label_counts))}")
     
     # Split data into train/val/test
     total_samples = feature_data.shape[1]

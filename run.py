@@ -200,9 +200,25 @@ def train(config: Config, trainer: L.Trainer, run=None):
     print("Train set shape: ", train_input.shape)
     print("Val set shape: ", val_input.shape)
     print("Test set shape: ", test_input.shape)
-    print(f"Classes distribution in train set: up {(counts_train[1][0].item()/train_labels.shape[0]):.2f} stat {(counts_train[1][1].item()/train_labels.shape[0]):.2f} down {(counts_train[1][2].item()/train_labels.shape[0]):.2f} ")
-    print(f"Classes distribution in val set: up {(counts_val[1][0].item()/val_labels.shape[0]):.2f} stat {(counts_val[1][1].item()/val_labels.shape[0]):.2f} down {(counts_val[1][2].item()/val_labels.shape[0]):.2f} ")
-    print(f"Classes distribution in test set: up {(counts_test[1][0].item()/test_labels.shape[0]):.2f} stat {(counts_test[1][1].item()/test_labels.shape[0]):.2f} down {(counts_test[1][2].item()/test_labels.shape[0]):.2f} ")
+    
+    # Safely handle class distribution printing
+    def safe_class_distribution(counts, total_samples):
+        class_counts = {0: 0, 1: 0, 2: 0}  # up, stat, down
+        for i, class_id in enumerate(counts[0]):
+            class_counts[class_id.item()] = counts[1][i].item()
+        
+        up_pct = class_counts[0] / total_samples
+        stat_pct = class_counts[1] / total_samples
+        down_pct = class_counts[2] / total_samples
+        return up_pct, stat_pct, down_pct
+    
+    train_up, train_stat, train_down = safe_class_distribution(counts_train, train_labels.shape[0])
+    val_up, val_stat, val_down = safe_class_distribution(counts_val, val_labels.shape[0])
+    test_up, test_stat, test_down = safe_class_distribution(counts_test, test_labels.shape[0])
+    
+    print(f"Classes distribution in train set: up {train_up:.2f} stat {train_stat:.2f} down {train_down:.2f} ")
+    print(f"Classes distribution in val set: up {val_up:.2f} stat {val_stat:.2f} down {val_down:.2f} ")
+    print(f"Classes distribution in test set: up {test_up:.2f} stat {test_stat:.2f} down {test_down:.2f} ")
     print()
     
     experiment_type = config.experiment.type
