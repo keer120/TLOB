@@ -113,4 +113,4 @@ def sbi_load(path, seq_size, horizon, all_features):
     test_input = torch.from_numpy(test_features.T).float()
     test_labels = torch.from_numpy(test_labels).long()
     
-    return train_input, train_labels, val_input, val_labels, test_input, test_labels 
+    return train_input, train_labels, val_input, val_labels, test_input, test_labels

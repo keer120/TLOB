@@ -8,6 +8,7 @@ data/I*
 data/T*
 data/FI_2010/*.txt
 data/BTC
+data/COMBINED
 env
 preprocessing/digital*
 data/checkpoints/TLOB/v*

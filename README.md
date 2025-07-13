@@ -1,13 +1,8 @@
 # TLOB: A Novel Transformer Model with Dual Attention for Stock Price Trend Prediction with Limit Order Book Data
-This is the official repository for the paper TLOB: A Novel Transformer Model with Dual Attention for Stock Price Trend Prediction with Limit Order Book Data.
+This is a repository for the paper TLOB: A Novel Transformer Model with Dual Attention for Stock Price Trend Prediction with Limit Order Book Data.
 
 ## Abstract
-Price Trend Prediction (PTP) based on Limit Order Book (LOB) data is a fundamental challenge in financial markets. Despite advances in deep learning, existing models fail to generalize across different market conditions and assets. Surprisingly, by adapting a simple MLP-based architecture to LOB, we show that we surpass SoTA performance; thus, challenging the necessity of complex architectures. Unlike past work that shows robustness issues, we propose TLOB, a transformer-based model that uses a dual attention mechanism to capture spatial and temporal dependencies in LOB data. This allows it to adaptively focus on the market microstructure, making it particularly effective for longer-horizon predictions and volatile market conditions.
-We also introduce a new labeling method that improves on previous ones, removing the horizon bias.
-We evaluate TLOB's effectiveness across four horizons, using the established FI-2010 benchmark, which exceeds the state-of-the-art by an average of 3.7 F1-score. Additionally, TLOB shows average improvements on Tesla and Intel with a 1.3 and 7.7 increase in F1-score, respectively. Finally, we tested TLOB on a recent Bitcoin dataset, and TLOB outperforms the SoTA performance by an average of 1.1 in F1-score.
-Additionally, we empirically show how stock price predictability has declined over time, -6.68 in F1-score, highlighting the growing market efficiency. 
-Predictability must be considered in relation to transaction costs, so we experimented with defining trends using an average spread, reflecting the primary transaction cost. The resulting performance deterioration underscores the complexity of translating trend classification into profitable trading strategies.
-We argue that our work provides new insights into the evolving landscape of stock price trend prediction and sets a strong foundation for future advancements in financial AI. We commit to releasing the code publicly. 
+Price Trend Prediction (PTP) based on Limit Order Book (LOB) data is a fundamental challenge in financial markets. Despite advances in deep learning, existing models fail to generalize across different market conditions and assets. Surprisingly, by adapting a simple MLP-based architecture to LOB, we show that we surpass SoTA performance; thus, challenging the necessity of complex architectures. Unlike past work that shows robustness issues, we propose TLOB, a transformer-based model that uses a dual attention mechanism to capture spatial and temporal dependencies in LOB data. This allows it to adaptively focus on the market microstructure, making it particularly effective for longer-horizon predictions and volatile market conditions. We also introduce a new labeling method that improves on previous ones, removing the horizon bias. We evaluate TLOB's effectiveness across four horizons, using the established FI-2010 benchmark, which exceeds the state-of-the-art by an average of 3.7 F1-score. Additionally, TLOB shows average improvements on Tesla and Intel with a 1.3 and 7.7 increase in F1-score, respectively. Finally, we tested TLOB on a recent Bitcoin dataset, and TLOB outperforms the SoTA performance by an average of 1.1 in F1-score. Additionally, we empirically show how stock price predictability has declined over time, -6.68 in F1-score, highlighting the growing market efficiency. Predictability must be considered in relation to transaction costs, so we experimented with defining trends using an average spread, reflecting the primary transaction cost. The resulting performance deterioration underscores the complexity of translating trend classification into profitable trading strategies. We argue that our work provides new insights into the evolving landscape of stock price trend prediction and sets a strong foundation for future advancements in financial AI. We commit to releasing the code publicly.
 
 # Getting Started 
 These instructions will get you a copy of the project up and running on your local machine for development and reproducibility purposes.
@@ -47,6 +42,11 @@ If you have some LOBSTER data, you can follow those steps:
 
 Otherwise, you can train and test with the BTC and FI-2010 datasets that will be automatically downloaded from Kaggle or unzipped, respectively. You need to set config.is_data_preprocessed to False.
 
+To use the combined_output_20.csv dataset:
+1. Place combined_output_20.csv in the data/COMBINED/ directory.
+2. Set dataset.type to COMBINED in the config file.
+3. Set config.is_data_preprocessed to False to preprocess the data into train.npy, val.npy, and test.npy.
+
 ## Training a TLOB, MLPLOB, DeepLOB, or BiNCTABL Model 
 To train a TLOB, MLPLOB, DeepLOB, or BiNCTABL Model, you need to set the type variable in the config file to TRAINING, then run this command:
 ```sh
@@ -58,7 +58,7 @@ A checkpoint will be saved in data/checkpoints/. You can see all the models and 
 To implement a new model, follow these steps:
 1. Implement your model class in the models/ directory. Your model class will take in an input of dimension [batch_size, seq_len, num_features], and should output a tensor of dimension [batch_size, 3].
 2. Add your model to pick_model in utils_models.
-3. Update the config file to include your model and its hyperparameters. If you are using the FI-2010 dataset, it is suggested to set the hidden dim to 40 and the hp all_features to false if you want to use only the LOB as input, or if you want to use the LOB and market features, the hidden dim should be 144 and all features true. If you are using LOBSTER data, it is suggested to set the hidden dim to 46 and all features to true to use LOB and orders, while if you want to use only the LOB, set all features to False. 
+3. Update the config file to include your model and its hyperparameters. If you are using the FI-2010 dataset, it is suggested to set the hidden dim to 40 and the hp all_features to false if you want to use only the LOB as input, or if you want to use the LOB and market features, the hidden dim should be 144 and all features true. If you are using LOBSTER data, it is suggested to set the hidden dim to 46 and all features to true to use LOB and orders, while if you want to use only the LOB, set all features to False. For the COMBINED dataset, set the hidden dim to 40 and all_features to False to use only the first 10 levels of LOB data.
 4. Add your model with cs.store, similar to the other models
 5. Run the training script:
 ```sh

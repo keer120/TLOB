@@ -76,6 +76,12 @@ class SBI(Dataset):
     batch_size: int = 32
 
 @dataclass
+class COMBINED(Dataset):
+    type: DatasetType = DatasetType.COMBINED
+    dates: list = field(default_factory=lambda: ["2025-05-12"])
+    batch_size: int = 64
+
+@dataclass
 class Experiment:
     is_data_preprocessed: bool = False
     is_wandb: bool = True
@@ -112,3 +118,4 @@ cs.store(group="dataset", name="lobster", node=LOBSTER)
 cs.store(group="dataset", name="fi_2010", node=FI_2010)
 cs.store(group="dataset", name="btc", node=BTC)
 cs.store(group="dataset", name="sbi", node=SBI)
+cs.store(group="dataset", name="combined", node=COMBINED)
