@@ -52,7 +52,16 @@ def train(config: Config, trainer: L.Trainer, run=None):
     horizon = config.experiment.horizon
     model_type = config.model.type
     checkpoint_ref = config.experiment.checkpoint_reference
-    checkpoint_path = os.path.join(cst.DIR_SAVED_MODEL, model_type.value, checkpoint_ref)
+    
+    # Handle checkpoint path construction
+    if checkpoint_ref.startswith("data/checkpoints/"):
+        # If checkpoint_ref already contains the full path, use it as is
+        checkpoint_path = checkpoint_ref
+    else:
+        # Otherwise, construct the path as before
+        checkpoint_path = os.path.join(cst.DIR_SAVED_MODEL, model_type.value, checkpoint_ref)
+    
+    print(f"Using checkpoint path: {checkpoint_path}")
     if dataset_type == "FI_2010":
         path = cst.DATA_DIR + "/FI_2010"
         train_input, train_labels, val_input, val_labels, test_input, test_labels = fi_2010_load(path, seq_size, horizon, config.model.hyperparameters_fixed["all_features"])
