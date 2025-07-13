@@ -235,16 +235,16 @@ def train(config: Config, trainer: L.Trainer, run=None):
         if checkpoint_ref != "":
             checkpoint = torch.load(checkpoint_path, map_location=cst.DEVICE)
             
-        print("Loading model from checkpoint: ", config.experiment.checkpoint_reference)
-        lr = checkpoint["hyper_parameters"]["lr"]
-        dir_ckpt = checkpoint["hyper_parameters"]["dir_ckpt"]
-        hidden_dim = checkpoint["hyper_parameters"]["hidden_dim"]
-        num_layers = checkpoint["hyper_parameters"]["num_layers"]
-        optimizer = checkpoint["hyper_parameters"]["optimizer"]
-        model_type = checkpoint["hyper_parameters"]["model_type"]
-        max_epochs = checkpoint["hyper_parameters"]["max_epochs"]
-        horizon = checkpoint["hyper_parameters"]["horizon"]
-        seq_size = checkpoint["hyper_parameters"]["seq_size"]
+        print("Loading model from checkpoint: ", config.experiment.checkpoint_reference) 
+        lr = checkpoint["hyper_parameters"].get("lr", 0.0001)
+        dir_ckpt = checkpoint["hyper_parameters"].get("dir_ckpt", "model.ckpt")
+        hidden_dim = checkpoint["hyper_parameters"].get("hidden_dim", 256)
+        num_layers = checkpoint["hyper_parameters"].get("num_layers", 4)
+        optimizer = checkpoint["hyper_parameters"].get("optimizer", "Adam")
+        model_type = checkpoint["hyper_parameters"].get("model_type", "TLOB")
+        max_epochs = checkpoint["hyper_parameters"].get("max_epochs", 10)
+        horizon = checkpoint["hyper_parameters"].get("horizon", 10)
+        seq_size = checkpoint["hyper_parameters"].get("seq_size", 128)
         if model_type == "MLPLOB":
             model = Engine.load_from_checkpoint(
                 checkpoint_path, 
