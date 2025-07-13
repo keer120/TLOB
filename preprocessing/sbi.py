@@ -33,6 +33,12 @@ def sbi_load(path, seq_size, horizon, all_features):
     # Read the CSV file
     df = pd.read_csv(csv_file)
     
+    # Check if we have enough data
+    if len(df) < 100:  # Minimum required samples
+        raise ValueError(f"SBI dataset too small: {len(df)} samples. Need at least 100 samples.")
+    
+    print(f"SBI Dataset loaded: {len(df)} samples")
+    
     # Extract bid and ask price columns (first 20 levels)
     bid_price_cols = [f'bid_price_{i}' for i in range(1, 21)]
     ask_price_cols = [f'ask_price_{i}' for i in range(1, 21)]
@@ -84,7 +90,7 @@ def sbi_load(path, seq_size, horizon, all_features):
     feature_data = feature_data.T
     
     # Calculate mid-price for labeling
-    mid_price = (df[bid_price_cols[0]].values + df[ask_price_cols[0]].values) / 2
+    mid_price = (df[bid_price_cols[0]].values.astype(np.float64) + df[ask_price_cols[0]].values.astype(np.float64)) / 2
     
     # Create labels based on price movement
     # For horizon 10, we'll use a simple approach: compare current mid-price with future mid-price
@@ -148,12 +154,31 @@ def sbi_load(path, seq_size, horizon, all_features):
     val_labels = labels[train_end:val_end - horizon]
     test_labels = labels[val_end:len(labels)]
     
-    # Convert to torch tensors
-    train_input = torch.from_numpy(train_features.T).float()
-    train_labels = torch.from_numpy(train_labels).long()
-    val_input = torch.from_numpy(val_features.T).float()
-    val_labels = torch.from_numpy(val_labels).long()
-    test_input = torch.from_numpy(test_features.T).float()
-    test_labels = torch.from_numpy(test_labels).long()
+    # Ensure all tensors have the same shape and are contiguous
+    train_input = torch.from_numpy(train_features.T).float().contiguous()
+    train_labels = torch.from_numpy(train_labels).long().contiguous()
+    val_input = torch.from_numpy(val_features.T).float().contiguous()
+    val_labels = torch.from_numpy(val_labels).long().contiguous()
+    test_input = torch.from_numpy(test_features.T).float().contiguous()
+    test_labels = torch.from_numpy(test_labels).long().contiguous()
+    
+    # Print tensor shapes for debugging
+    print(f"SBI Dataset Tensor Shapes:")
+    print(f"  train_input: {train_input.shape}")
+    print(f"  train_labels: {train_labels.shape}")
+    print(f"  val_input: {val_input.shape}")
+    print(f"  val_labels: {val_labels.shape}")
+    print(f"  test_input: {test_input.shape}")
+    print(f"  test_labels: {test_labels.shape}")
+    
+    # Check if we have enough samples
+    min_samples = min(train_input.shape[0], val_input.shape[0], test_input.shape[0])
+    if min_samples < seq_size:
+        print(f"Warning: Not enough samples ({min_samples}) for sequence size {seq_size}")
+        print("Adjusting sequence size to fit available data...")
+        # Use a smaller sequence size that fits the data
+        adjusted_seq_size = min(seq_size, min_samples - 1)
+        print(f"Using adjusted sequence size: {adjusted_seq_size}")
+        return train_input, train_labels, val_input, val_labels, test_input, test_labels, adjusted_seq_size
     
     return train_input, train_labels, val_input, val_labels, test_input, test_labels

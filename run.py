@@ -106,7 +106,23 @@ def train(config: Config, trainer: L.Trainer, run=None):
     elif dataset_type == "SBI":
         # Use the direct path to the SBI CSV file
         path = "/content/combined_output_week_20.csv"
-        train_input, train_labels, val_input, val_labels, test_input, test_labels = sbi_load(path, seq_size, horizon, config.model.hyperparameters_fixed["all_features"])
+        try:
+            result = sbi_load(path, seq_size, horizon, config.model.hyperparameters_fixed["all_features"])
+        except FileNotFoundError:
+            print(f"Error: SBI dataset file not found at {path}")
+            print("Please ensure the file exists or provide the correct path.")
+            raise
+        except Exception as e:
+            print(f"Error loading SBI dataset: {e}")
+            raise
+        
+        # Handle potential adjusted sequence size
+        if len(result) == 7:  # Adjusted sequence size returned
+            train_input, train_labels, val_input, val_labels, test_input, test_labels, adjusted_seq_size = result
+            print(f"Using adjusted sequence size: {adjusted_seq_size} (original: {seq_size})")
+            seq_size = adjusted_seq_size
+        else:  # Normal return
+            train_input, train_labels, val_input, val_labels, test_input, test_labels = result
         train_set = Dataset(train_input, train_labels, seq_size)
         val_set = Dataset(val_input, val_labels, seq_size)
         test_set = Dataset(test_input, test_labels, seq_size)
