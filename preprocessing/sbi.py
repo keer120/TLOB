@@ -69,15 +69,15 @@ def sbi_load(path, seq_size, horizon, all_features):
         feature_data = np.column_stack([price_data, quantity_data, order_data])
         
         # Add 24 dummy market features to match FI-2010's 144 features
-        # These are placeholder features that will be set to 0
-        dummy_market_features = np.zeros((feature_data.shape[1], 24))
+        # Create dummy features with same number of samples as feature_data
+        dummy_market_features = np.zeros((feature_data.shape[0], 24))
         feature_data = np.column_stack([feature_data, dummy_market_features])
     else:
         # Use only price features (40 features)
         feature_data = price_data
         
         # Add 104 dummy features to match FI-2010's 144 features
-        dummy_features = np.zeros((feature_data.shape[1], 104))
+        dummy_features = np.zeros((feature_data.shape[0], 104))
         feature_data = np.column_stack([feature_data, dummy_features])
     
     # Transpose to match the expected format (features x time)
