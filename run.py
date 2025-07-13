@@ -95,7 +95,8 @@ def train(config: Config, trainer: L.Trainer, run=None):
         test_loaders = [data_module.test_dataloader()]
         
     elif dataset_type == "SBI":
-        path = cst.DATA_DIR + "/SBI"
+        # Use the direct path to the SBI CSV file
+        path = "/content/combined_output_week_20.csv"
         train_input, train_labels, val_input, val_labels, test_input, test_labels = sbi_load(path, seq_size, horizon, config.model.hyperparameters_fixed["all_features"])
         train_set = Dataset(train_input, train_labels, seq_size)
         val_set = Dataset(val_input, val_labels, seq_size)

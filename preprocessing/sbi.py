@@ -11,7 +11,7 @@ def sbi_load(path, seq_size, horizon, all_features):
     Load and preprocess SBI dataset from CSV files.
     
     Args:
-        path: Path to the SBI data directory
+        path: Path to the SBI data directory or direct path to CSV file
         seq_size: Sequence size for the model
         horizon: Prediction horizon
         all_features: Whether to use all features or only price features
@@ -19,8 +19,14 @@ def sbi_load(path, seq_size, horizon, all_features):
     Returns:
         train_input, train_labels, val_input, val_labels, test_input, test_labels
     """
-    # Load the SBI CSV file
-    csv_file = os.path.join(path, "sbi_data.csv")
+    # Handle both directory path and direct file path
+    if os.path.isdir(path):
+        # If path is a directory, look for sbi_data.csv inside it
+        csv_file = os.path.join(path, "sbi_data.csv")
+    else:
+        # If path is a direct file path, use it as is
+        csv_file = path
+    
     if not os.path.exists(csv_file):
         raise FileNotFoundError(f"SBI data file not found at {csv_file}")
     

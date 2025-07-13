@@ -84,27 +84,9 @@ def hydra_app(config: Config):
         data_builder.prepare_save_datasets()
         
     elif config.dataset.type == cst.DatasetType.SBI and not config.experiment.is_data_preprocessed:
-        # For SBI dataset, copy from Colab content directory to data/SBI directory
-        sbi_data_dir = cst.DATA_DIR + "/SBI"
-        if not os.path.exists(sbi_data_dir):
-            os.makedirs(sbi_data_dir)
-        
-        # Source file in Colab content directory
-        source_file = "content/combined_output_week_20.csv"
-        target_file = os.path.join(sbi_data_dir, "sbi_data.csv")
-        
-        try:
-            # Copy the file from Colab content to our data directory
-            import shutil
-            shutil.copy2(source_file, target_file)
-            print(f"SBI dataset copied from {source_file} to {target_file}")
-        except FileNotFoundError:
-            print(f"Warning: Could not find {source_file}")
-            print("Please ensure the SBI dataset file is available at content/combined_output_week_20.csv")
-            print(f"Or manually place sbi_data.csv in the {sbi_data_dir} directory")
-        except Exception as e:
-            print(f"Error copying SBI dataset: {e}")
-            print(f"Please manually copy the file to {target_file}")
+        # SBI dataset is loaded directly from /content/combined_output_week_20.csv
+        # No preprocessing needed as the file is used directly in run.py
+        print("SBI dataset will be loaded directly from /content/combined_output_week_20.csv")
 
     if config.experiment.is_wandb:
         if config.experiment.is_sweep:
