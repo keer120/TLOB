@@ -53,14 +53,12 @@ def train(config: Config, trainer: L.Trainer, run=None):
     model_type = config.model.type
     checkpoint_ref = config.experiment.checkpoint_reference
     
-    # Handle checkpoint path construction
-    if checkpoint_ref.startswith("data/checkpoints/"):
-        # If checkpoint_ref already contains the full path, use it as is
+    # Determine checkpoint path robustly
+    if os.path.isabs(checkpoint_ref) or checkpoint_ref.startswith("content/") or checkpoint_ref.startswith("./") or checkpoint_ref.startswith("/"):
         checkpoint_path = checkpoint_ref
     else:
-        # Otherwise, construct the path as before
         checkpoint_path = os.path.join(cst.DIR_SAVED_MODEL, model_type.value, checkpoint_ref)
-    
+
     print(f"Using checkpoint path: {checkpoint_path}")
     if dataset_type == "FI_2010":
         path = cst.DATA_DIR + "/FI_2010"
