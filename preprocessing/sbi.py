@@ -154,12 +154,16 @@ def sbi_load(path, seq_size, horizon, all_features):
     val_labels = labels[train_end:val_end - horizon]
     test_labels = labels[val_end:len(labels)]
     
-    # Ensure all tensors have the same shape and are contiguous
-    train_input = torch.from_numpy(train_features.T).float().contiguous()
+    # Convert to torch tensors with aligned lengths for rolling window
+    train_input = train_features.T[:len(train_labels) + seq_size - 1]
+    val_input = val_features.T[:len(val_labels) + seq_size - 1]
+    test_input = test_features.T[:len(test_labels) + seq_size - 1]
+
+    train_input = torch.from_numpy(train_input).float().contiguous()
     train_labels = torch.from_numpy(train_labels).long().contiguous()
-    val_input = torch.from_numpy(val_features.T).float().contiguous()
+    val_input = torch.from_numpy(val_input).float().contiguous()
     val_labels = torch.from_numpy(val_labels).long().contiguous()
-    test_input = torch.from_numpy(test_features.T).float().contiguous()
+    test_input = torch.from_numpy(test_input).float().contiguous()
     test_labels = torch.from_numpy(test_labels).long().contiguous()
     
     # Print tensor shapes for debugging
