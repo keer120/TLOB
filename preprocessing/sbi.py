@@ -154,10 +154,14 @@ def sbi_load(path, seq_size, horizon, all_features):
     val_labels = labels[train_end:val_end - horizon]
     test_labels = labels[val_end:len(labels)]
     
-    # Convert to torch tensors with aligned lengths for rolling window
-    train_input = train_features.T[:len(train_labels) + seq_size - 1]
-    val_input = val_features.T[:len(val_labels) + seq_size - 1]
-    test_input = test_features.T[:len(test_labels) + seq_size - 1]
+    # Align input and label lengths for rolling window
+    train_input = train_features.T
+    val_input = val_features.T
+    test_input = test_features.T
+
+    train_input = train_input[:len(train_labels) + seq_size - 1]
+    val_input = val_input[:len(val_labels) + seq_size - 1]
+    test_input = test_input[:len(test_labels) + seq_size - 1]
 
     train_input = torch.from_numpy(train_input).float().contiguous()
     train_labels = torch.from_numpy(train_labels).long().contiguous()
