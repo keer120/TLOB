@@ -182,6 +182,8 @@ class Engine(LightningModule):
         targets = np.concatenate(self.test_targets)    
         predictions = np.concatenate(self.test_predictions)
         predictions_path = os.path.join(cst.DIR_SAVED_MODEL, str(self.model_type), self.dir_ckpt, "predictions")
+        import os
+        os.makedirs(os.path.dirname(predictions_path), exist_ok=True)
         np.save(predictions_path, predictions)
         class_report = classification_report(targets, predictions, digits=4, output_dict=True)
         print(classification_report(targets, predictions, digits=4))
