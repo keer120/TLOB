@@ -12,17 +12,28 @@ class Dataset(data.Dataset):
     """Characterizes a dataset for PyTorch"""
     def __init__(self, x, y, seq_size):
         self.seq_size = seq_size
-        self.x = torch.from_numpy(x).float() if isinstance(x, np.ndarray) else x
-        self.y = torch.from_numpy(y).long() if isinstance(y, np.ndarray) else y
-        # Only allow indices where a full sequence and label are available
-        self.length = self.x.shape[0] - self.seq_size + 1
+        self.x = x
+        self.y = y
+        self.length = min(self.x.shape[0] - self.seq_size + 1, self.y.shape[0])
+        # Debug: print shapes and length
+        print(f"[Dataset] x shape: {self.x.shape}, y shape: {self.y.shape}, seq_size: {self.seq_size}, dataset length: {self.length}")
+        if self.length <= 0:
+            raise ValueError(f"[Dataset] Invalid dataset length: {self.length}. x shape: {self.x.shape}, y shape: {self.y.shape}, seq_size: {self.seq_size}")
+        if self.x.shape[0] < self.seq_size:
+            raise ValueError(f"[Dataset] x.shape[0] < seq_size: {self.x.shape[0]} < {self.seq_size}")
+        if self.length != self.y.shape[0]:
+            print(f"[Dataset] Warning: dataset length ({self.length}) != y.shape[0] ({self.y.shape[0]})")
 
     def __len__(self):
         return self.length
 
     def __getitem__(self, i):
-        input = self.x[i:i+self.seq_size, :]  # shape: [seq_size, num_features]
-        label = self.y[i+self.seq_size-1]     # label at the end of the window
+        if i + self.seq_size > self.x.shape[0]:
+            raise IndexError(f"[Dataset] i + seq_size ({i} + {self.seq_size}) exceeds x.shape[0] ({self.x.shape[0]})")
+        if i >= self.y.shape[0]:
+            raise IndexError(f"[Dataset] i ({i}) exceeds y.shape[0] ({self.y.shape[0]})")
+        input = self.x[i:i+self.seq_size, :]
+        label = self.y[i]
         return input, label
     
     # Backward compatibility for old checkpoints
