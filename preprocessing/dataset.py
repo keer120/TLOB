@@ -43,7 +43,8 @@ class DataModule(pl.LightningDataModule):
         self.batch_size = batch_size
         self.test_batch_size = test_batch_size
         self.is_shuffle_train = is_shuffle_train
-        if train_set.data.device.type != cst.DEVICE:       #this is true only when we are using a GPU but the data is still on the CPU
+        # Fix: use train_set.x instead of train_set.data
+        if train_set.x.device.type != cst.DEVICE:       #this is true only when we are using a GPU but the data is still on the CPU
             self.pin_memory = True
         else:
             self.pin_memory = False
