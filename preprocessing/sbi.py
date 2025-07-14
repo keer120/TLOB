@@ -154,17 +154,22 @@ def sbi_load(path, seq_size, horizon, all_features):
     val_labels = labels[train_end:val_end - horizon]
     test_labels = labels[val_end:len(labels)]
     
-    # Robustly align input and label lengths for rolling window
-    min_train = min(train_features.T.shape[0], len(train_labels) + seq_size - 1)
-    min_val = min(val_features.T.shape[0], len(val_labels) + seq_size - 1)
-    min_test = min(test_features.T.shape[0], len(test_labels) + seq_size - 1)
+    # Align input and label lengths for rolling window
+    train_input = train_features.T
+    val_input = val_features.T
+    test_input = test_features.T
 
-    train_input = train_features.T[:min_train]
-    train_labels = train_labels[:min_train - seq_size + 1]
-    val_input = val_features.T[:min_val]
-    val_labels = val_labels[:min_val - seq_size + 1]
-    test_input = test_features.T[:min_test]
-    test_labels = test_labels[:min_test - seq_size + 1]
+    train_max_len = min(train_input.shape[0], len(train_labels) + seq_size - 1)
+    train_input = train_input[:train_max_len]
+    train_labels = train_labels[:train_max_len - seq_size + 1]
+
+    val_max_len = min(val_input.shape[0], len(val_labels) + seq_size - 1)
+    val_input = val_input[:val_max_len]
+    val_labels = val_labels[:val_max_len - seq_size + 1]
+
+    test_max_len = min(test_input.shape[0], len(test_labels) + seq_size - 1)
+    test_input = test_input[:test_max_len]
+    test_labels = test_labels[:test_max_len - seq_size + 1]
 
     train_input = torch.from_numpy(train_input).float().contiguous()
     train_labels = torch.from_numpy(train_labels).long().contiguous()
