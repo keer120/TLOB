@@ -11,24 +11,19 @@ from utils.utils_data import one_hot_encoding_type, tanh_encoding_type
 class Dataset(data.Dataset):
     """Characterizes a dataset for PyTorch"""
     def __init__(self, x, y, seq_size):
-        """Initialization""" 
         self.seq_size = seq_size
-        self.length = y.shape[0]
-        self.x = x
-        self.y = y
-        if type(self.x) == np.ndarray:
-            self.x = torch.from_numpy(x).float()
-        if type(self.y) == np.ndarray:
-            self.y = torch.from_numpy(y).long()
-        self.data = self.x
+        self.x = torch.from_numpy(x).float() if isinstance(x, np.ndarray) else x
+        self.y = torch.from_numpy(y).long() if isinstance(y, np.ndarray) else y
+        # Only allow indices where a full sequence and label are available
+        self.length = self.x.shape[0] - self.seq_size + 1
 
     def __len__(self):
-        """Denotes the total number of samples"""
         return self.length
 
     def __getitem__(self, i):
-        input = self.x[i:i+self.seq_size, :]
-        return input, self.y[i]
+        input = self.x[i:i+self.seq_size, :]  # shape: [seq_size, num_features]
+        label = self.y[i+self.seq_size-1]     # label at the end of the window
+        return input, label
     
     # Backward compatibility for old checkpoints
     FI_2010 = "FI_2010"
