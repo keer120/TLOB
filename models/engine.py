@@ -218,15 +218,12 @@ class Engine(LightningModule):
         # Only plot confusion matrix during evaluation or fine-tuning, not training
         if getattr(self, 'experiment_type', None) in ["EVALUATION", "FINETUNING"]:
             try:
-                from preprocessing.sbi import save_confusion_matrix
-                cm_path = os.path.join(os.path.dirname(predictions_path), "confusion_matrix.png")
-                save_confusion_matrix(targets, predictions, cm_path)
-                # Display confusion matrix inline
+                from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
                 import matplotlib.pyplot as plt
-                img = plt.imread(cm_path)
-                plt.figure(figsize=(6, 6))
-                plt.imshow(img)
-                plt.axis('off')
+                cm = confusion_matrix(targets, predictions, labels=[0, 1, 2])
+                disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=["Up", "Stable", "Down"])
+                fig, ax = plt.subplots(figsize=(6, 6))
+                disp.plot(ax=ax, cmap=plt.cm.Blues, values_format='d')
                 plt.title('Confusion Matrix (Evaluation)')
                 plt.show()
             except Exception as e:
