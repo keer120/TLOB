@@ -117,13 +117,42 @@ def sbi_load(path, seq_size, horizon, all_features):
     
     # Calculate mid-price for labeling
     mid_price = (df[bid_price_cols[0]].values.astype(np.float64) + df[ask_price_cols[0]].values.astype(np.float64)) / 2
-    
+
+    # --- DEBUG: Print price diff stats and label distribution for various thresholds ---
+    price_diff = pd.Series(mid_price).shift(-horizon) - pd.Series(mid_price)
+    print("Price diff stats:")
+    print(price_diff.describe())
+    print("Max abs diff:", price_diff.abs().max())
+
+    def create_labels_for_threshold(price_col, horizon, threshold):
+        price_diff = pd.Series(price_col).shift(-horizon) - pd.Series(price_col)
+        labels = np.zeros(len(price_col) - horizon)
+        for i in range(len(price_col) - horizon):
+            current_price = price_col[i]
+            future_price = price_col[i + horizon]
+            pct_change = (future_price - current_price) / current_price
+            if pct_change > threshold:
+                labels[i] = 0  # Up
+            elif pct_change < -threshold:
+                labels[i] = 2  # Down
+            else:
+                labels[i] = 1  # Stable
+        return labels
+
+    print("Label distribution for various thresholds:")
+    for thresh in [0.0, 0.00005, 0.0001, 0.0005, 0.001, 0.005]:
+        labels_dbg = create_labels_for_threshold(mid_price, horizon, thresh)
+        unique_dbg, counts_dbg = np.unique(labels_dbg, return_counts=True)
+        print(f"  Threshold {thresh}: {{" + ", ".join([f'{int(u)}: {c}' for u, c in zip(unique_dbg, counts_dbg)]) + "}}")
+    print("--- End debug ---\n")
+    # --- END DEBUG ---
+
     # Create labels based on price movement
     # For horizon 10, we'll use a simple approach: compare current mid-price with future mid-price
     labels = np.zeros(len(mid_price) - horizon)
     
     # Use a dynamic threshold based on horizon
-    threshold = get_threshold_for_horizon(horizon)
+    threshold = 0.001  # User requested to always use 0.001
     print(f"Using horizon={horizon}, threshold for up/down labeling: {threshold}")
 
     for i in range(len(mid_price) - horizon):
