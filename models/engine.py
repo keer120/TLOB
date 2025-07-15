@@ -126,20 +126,36 @@ class Engine(LightningModule):
         if self.experiment_type == "TRAINING":
             with self.ema.average_parameters():
                 y_hat = self.forward(x, batch_idx)
+                # Debug: check for NaN/Inf in y_hat and y
+                if torch.isnan(y_hat).any() or torch.isinf(y_hat).any():
+                    print("[DEBUG] NaN or Inf in y_hat in test_step")
+                if torch.isnan(y).any() or torch.isinf(y).any():
+                    print("[DEBUG] NaN or Inf in y in test_step")
                 batch_loss = self.loss(y_hat, y)
+                batch_loss_mean = torch.mean(batch_loss)
+                if torch.isnan(batch_loss_mean) or torch.isinf(batch_loss_mean):
+                    print("[DEBUG] NaN or Inf in batch_loss_mean in test_step")
+                else:
+                    self.test_losses.append(batch_loss_mean.item())
                 self.test_targets.append(y.cpu().numpy())
                 self.test_predictions.append(y_hat.argmax(dim=1).cpu().numpy())
                 self.test_proba.append(torch.softmax(y_hat, dim=1)[:, 1].cpu().numpy())
-                batch_loss_mean = torch.mean(batch_loss)
-                self.test_losses.append(batch_loss_mean.item())
         else:
             y_hat = self.forward(x, batch_idx)
+            # Debug: check for NaN/Inf in y_hat and y
+            if torch.isnan(y_hat).any() or torch.isinf(y_hat).any():
+                print("[DEBUG] NaN or Inf in y_hat in test_step")
+            if torch.isnan(y).any() or torch.isinf(y).any():
+                print("[DEBUG] NaN or Inf in y in test_step")
             batch_loss = self.loss(y_hat, y)
+            batch_loss_mean = torch.mean(batch_loss)
+            if torch.isnan(batch_loss_mean) or torch.isinf(batch_loss_mean):
+                print("[DEBUG] NaN or Inf in batch_loss_mean in test_step")
+            else:
+                self.test_losses.append(batch_loss_mean.item())
             self.test_targets.append(y.cpu().numpy())
             self.test_predictions.append(y_hat.argmax(dim=1).cpu().numpy())
             self.test_proba.append(torch.softmax(y_hat, dim=1)[:, 1].cpu().numpy())
-            batch_loss_mean = torch.mean(batch_loss)
-            self.test_losses.append(batch_loss_mean.item())
         return batch_loss_mean
     
     def on_validation_epoch_start(self) -> None:
@@ -200,7 +216,13 @@ class Engine(LightningModule):
         np.save(predictions_path, predictions)
         class_report = classification_report(targets, predictions, digits=4, output_dict=True)
         print(classification_report(targets, predictions, digits=4))
-        self.log("test_loss", sum(self.test_losses) / len(self.test_losses))
+        # Debug: check if test_losses is empty
+        if len(self.test_losses) == 0:
+            print("[DEBUG] test_losses is empty in on_test_epoch_end!")
+            test_loss = float('nan')
+        else:
+            test_loss = sum(self.test_losses) / len(self.test_losses)
+        self.log("test_loss", test_loss)
         self.log("f1_score", class_report["macro avg"]["f1-score"])
         self.log("accuracy", class_report["accuracy"])
         self.log("precision", class_report["macro avg"]["precision"])
