@@ -54,32 +54,8 @@ class Engine(LightningModule):
         self.model = pick_model(model_type, hidden_dim, num_layers, seq_size, num_features, num_heads, is_sin_emb, dataset_type) 
         self.ema = ExponentialMovingAverage(self.parameters(), decay=0.999)
         self.ema.to(cst.DEVICE)
-
-        # --- Class weighting for imbalanced classification ---
-        self.loss_function = nn.CrossEntropyLoss()  # default, will be replaced if weights are available
+        self.loss_function = nn.CrossEntropyLoss()
         self.class_weights = None
-        if hasattr(self, 'train_dataloader') or hasattr(self, 'train_set'):
-            # If train_set is available, compute class weights
-            try:
-                if hasattr(self, 'train_set'):
-                    labels = self.train_set[:][1]  # (x, y), get y
-                elif hasattr(self, 'train_dataloader'):
-                    labels = []
-                    for batch in self.train_dataloader():
-                        labels.append(batch[1])
-                    labels = torch.cat(labels)
-                else:
-                    labels = None
-                if labels is not None:
-                    class_sample_count = torch.bincount(labels)
-                    class_weights = 1. / class_sample_count.float()
-                    class_weights = class_weights / class_weights.sum() * len(class_sample_count)  # normalize
-                    self.class_weights = class_weights.to(cst.DEVICE)
-                    print(f"[Engine] Using class weights: {self.class_weights}")
-                    self.loss_function = nn.CrossEntropyLoss(weight=self.class_weights)
-            except Exception as e:
-                print(f"[Engine] Could not compute class weights: {e}")
-        # --- End class weighting ---
         self.train_losses = []
         self.val_losses = []
         self.test_losses = []
@@ -104,6 +80,14 @@ class Engine(LightningModule):
         
     def training_step(self, batch, batch_idx):
         x, y = batch
+        # Compute class weights on first batch if not set
+        if self.class_weights is None:
+            class_sample_count = torch.bincount(y)
+            class_weights = 1. / class_sample_count.float()
+            class_weights = class_weights / class_weights.sum() * len(class_sample_count)
+            self.class_weights = class_weights.to(y.device)
+            print(f"[Engine] Using class weights: {self.class_weights}")
+            self.loss_function = nn.CrossEntropyLoss(weight=self.class_weights)
         y_hat = self.forward(x)
         batch_loss = self.loss(y_hat, y)
         batch_loss_mean = torch.mean(batch_loss)
