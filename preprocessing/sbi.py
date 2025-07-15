@@ -152,7 +152,7 @@ def sbi_load(path, seq_size, horizon, all_features):
     labels = np.zeros(len(mid_price) - horizon)
     
     # Use a dynamic threshold based on horizon
-    threshold = 0.001  # User requested to always use 0.001
+    threshold = 0.0001  # Use 0.0001 for more balanced up/stat/down classes
     print(f"Using horizon={horizon}, threshold for up/down labeling: {threshold}")
 
     for i in range(len(mid_price) - horizon):
