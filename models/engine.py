@@ -80,6 +80,9 @@ class Engine(LightningModule):
             return nn.CrossEntropyLoss(weight=self.class_weights)
         else:
             return nn.CrossEntropyLoss()
+
+    def loss(self, y_hat, y):
+        return self.loss_function(y_hat, y)
         
     def training_step(self, batch, batch_idx):
         x, y = batch
