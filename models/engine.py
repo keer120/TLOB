@@ -191,6 +191,14 @@ class Engine(LightningModule):
         self.log("accuracy", class_report["accuracy"])
         self.log("precision", class_report["macro avg"]["precision"])
         self.log("recall", class_report["macro avg"]["recall"])
+        # Only plot confusion matrix during evaluation, not training
+        if getattr(self, 'experiment_type', None) == "EVALUATION":
+            try:
+                from preprocessing.sbi import save_confusion_matrix
+                cm_path = os.path.join(os.path.dirname(predictions_path), "confusion_matrix.png")
+                save_confusion_matrix(targets, predictions, cm_path)
+            except Exception as e:
+                print(f"Could not plot confusion matrix: {e}")
         self.test_targets = []
         self.test_predictions = []
         self.test_losses = []  
