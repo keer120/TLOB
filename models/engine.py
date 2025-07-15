@@ -122,37 +122,22 @@ class Engine(LightningModule):
         x, y = batch
         mid_prices = ((x[:, 0, 0] + x[:, 0, 2]) // 2).cpu().numpy().flatten()
         self.test_mid_prices.append(mid_prices)
-        # Test: with EMA
-        if self.experiment_type == "TRAINING":
-            with self.ema.average_parameters():
-                y_hat = self.forward(x, batch_idx)
-                # Debug: check for NaN/Inf in y_hat and y
-                if torch.isnan(y_hat).any() or torch.isinf(y_hat).any():
-                    print("[DEBUG] NaN or Inf in y_hat in test_step")
-                if torch.isnan(y).any() or torch.isinf(y).any():
-                    print("[DEBUG] NaN or Inf in y in test_step")
-                batch_loss = self.loss(y_hat, y)
-                batch_loss_mean = torch.mean(batch_loss)
-                if torch.isnan(batch_loss_mean) or torch.isinf(batch_loss_mean):
-                    print("[DEBUG] NaN or Inf in batch_loss_mean in test_step")
-                else:
-                    self.test_losses.append(batch_loss_mean.item())
-                self.test_targets.append(y.cpu().numpy())
-                self.test_predictions.append(y_hat.argmax(dim=1).cpu().numpy())
-                self.test_proba.append(torch.softmax(y_hat, dim=1)[:, 1].cpu().numpy())
+        y_hat = self.forward(x, batch_idx)
+        # Debug: check for NaN/Inf in y_hat and y
+        if torch.isnan(y_hat).any() or torch.isinf(y_hat).any():
+            print(f"[DEBUG] NaN or Inf in y_hat in test_step, batch {batch_idx}")
+        if torch.isnan(y).any() or torch.isinf(y).any():
+            print(f"[DEBUG] NaN or Inf in y in test_step, batch {batch_idx}")
+        batch_loss = self.loss(y_hat, y)
+        batch_loss_mean = torch.mean(batch_loss)
+        if torch.isnan(batch_loss_mean) or torch.isinf(batch_loss_mean):
+            print(f"[DEBUG] Skipping batch {batch_idx} due to NaN/Inf in batch_loss_mean")
+            if not hasattr(self, 'skipped_test_batches'):
+                self.skipped_test_batches = 0
+            self.skipped_test_batches += 1
+            return None  # Do not append anything for this batch
         else:
-            y_hat = self.forward(x, batch_idx)
-            # Debug: check for NaN/Inf in y_hat and y
-            if torch.isnan(y_hat).any() or torch.isinf(y_hat).any():
-                print("[DEBUG] NaN or Inf in y_hat in test_step")
-            if torch.isnan(y).any() or torch.isinf(y).any():
-                print("[DEBUG] NaN or Inf in y in test_step")
-            batch_loss = self.loss(y_hat, y)
-            batch_loss_mean = torch.mean(batch_loss)
-            if torch.isnan(batch_loss_mean) or torch.isinf(batch_loss_mean):
-                print("[DEBUG] NaN or Inf in batch_loss_mean in test_step")
-            else:
-                self.test_losses.append(batch_loss_mean.item())
+            self.test_losses.append(batch_loss_mean.item())
             self.test_targets.append(y.cpu().numpy())
             self.test_predictions.append(y_hat.argmax(dim=1).cpu().numpy())
             self.test_proba.append(torch.softmax(y_hat, dim=1)[:, 1].cpu().numpy())
@@ -223,6 +208,9 @@ class Engine(LightningModule):
         else:
             test_loss = sum(self.test_losses) / len(self.test_losses)
         self.log("test_loss", test_loss)
+        if hasattr(self, 'skipped_test_batches'):
+            print(f"[DEBUG] Skipped {self.skipped_test_batches} test batches due to NaN/Inf loss.")
+            del self.skipped_test_batches
         self.log("f1_score", class_report["macro avg"]["f1-score"])
         self.log("accuracy", class_report["accuracy"])
         self.log("precision", class_report["macro avg"]["precision"])
