@@ -4,7 +4,33 @@ import constants as cst
 import os
 from torch.utils import data
 import torch
+import matplotlib.pyplot as plt
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 
+
+def get_threshold_for_horizon(horizon):
+    # Use a larger threshold for larger horizons (example: 0.001 for 10, 0.005 for 100)
+    if horizon <= 10:
+        return 0.001
+    elif horizon <= 20:
+        return 0.002
+    elif horizon <= 50:
+        return 0.003
+    elif horizon <= 100:
+        return 0.005
+    else:
+        return 0.01
+
+def plot_confusion_matrix(y_true, y_pred, save_path=None, title="Confusion Matrix"):
+    cm = confusion_matrix(y_true, y_pred)
+    disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=["Up", "Stable", "Down"])
+    fig, ax = plt.subplots(figsize=(6, 6))
+    disp.plot(ax=ax, cmap=plt.cm.Blues, values_format='d')
+    plt.title(title)
+    if save_path:
+        plt.savefig(save_path)
+        print(f"Confusion matrix saved to {save_path}")
+    plt.close(fig)
 
 def sbi_load(path, seq_size, horizon, all_features):
     """
@@ -96,44 +122,20 @@ def sbi_load(path, seq_size, horizon, all_features):
     # For horizon 10, we'll use a simple approach: compare current mid-price with future mid-price
     labels = np.zeros(len(mid_price) - horizon)
     
-    # Calculate some statistics for debugging
-    price_changes = []
+    # Use a dynamic threshold based on horizon
+    threshold = get_threshold_for_horizon(horizon)
+    print(f"Using horizon={horizon}, threshold for up/down labeling: {threshold}")
+
     for i in range(len(mid_price) - horizon):
         current_price = mid_price[i]
         future_price = mid_price[i + horizon]
         pct_change = (future_price - current_price) / current_price
-        price_changes.append(pct_change)
-    
-    # Print some statistics about price changes
-    price_changes = np.array(price_changes)
-    print(f"SBI Dataset Price Change Statistics:")
-    print(f"  Mean: {np.mean(price_changes):.6f}")
-    print(f"  Std: {np.std(price_changes):.6f}")
-    print(f"  Min: {np.min(price_changes):.6f}")
-    print(f"  Max: {np.max(price_changes):.6f}")
-    print(f"  Percentiles: 1%={np.percentile(price_changes, 1):.6f}, 99%={np.percentile(price_changes, 99):.6f}")
-    
-    # Use more reasonable thresholds based on the data
-    # Use 1st and 99th percentiles as thresholds
-    up_threshold = np.percentile(price_changes, 66)  # Top 33%
-    down_threshold = np.percentile(price_changes, 34)  # Bottom 33%
-    
-    print(f"  Using thresholds: up > {up_threshold:.6f}, down < {down_threshold:.6f}")
-    
-    for i in range(len(mid_price) - horizon):
-        current_price = mid_price[i]
-        future_price = mid_price[i + horizon]
-        
-        # Calculate percentage change
-        pct_change = (future_price - current_price) / current_price
-        
-        # Define thresholds for classification
-        if pct_change > up_threshold:  # Up movement
-            labels[i] = 0
-        elif pct_change < down_threshold:  # Down movement
-            labels[i] = 2
-        else:  # Stationary
-            labels[i] = 1
+        if pct_change > threshold:
+            labels[i] = 0  # Up
+        elif pct_change < -threshold:
+            labels[i] = 2  # Down
+        else:
+            labels[i] = 1  # Stable
     
     # Print label distribution
     unique_labels, label_counts = np.unique(labels, return_counts=True)
@@ -198,3 +200,7 @@ def sbi_load(path, seq_size, horizon, all_features):
         return train_input, train_labels, val_input, val_labels, test_input, test_labels, adjusted_seq_size
     
     return train_input, train_labels, val_input, val_labels, test_input, test_labels
+
+# --- Add this function to your evaluation script or after test ---
+def save_confusion_matrix(y_true, y_pred, out_path):
+    plot_confusion_matrix(y_true, y_pred, save_path=out_path)
