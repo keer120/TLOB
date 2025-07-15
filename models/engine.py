@@ -54,7 +54,6 @@ class Engine(LightningModule):
         self.model = pick_model(model_type, hidden_dim, num_layers, seq_size, num_features, num_heads, is_sin_emb, dataset_type) 
         self.ema = ExponentialMovingAverage(self.parameters(), decay=0.999)
         self.ema.to(cst.DEVICE)
-        self.loss_function = nn.CrossEntropyLoss()
         self.class_weights = None
         self.train_losses = []
         self.val_losses = []
@@ -75,8 +74,12 @@ class Engine(LightningModule):
         output = self.model(x)
         return output
     
-    def loss(self, y_hat, y):
-        return self.loss_function(y_hat, y)
+    @property
+    def loss_function(self):
+        if self.class_weights is not None:
+            return nn.CrossEntropyLoss(weight=self.class_weights)
+        else:
+            return nn.CrossEntropyLoss()
         
     def training_step(self, batch, batch_idx):
         x, y = batch
@@ -87,7 +90,6 @@ class Engine(LightningModule):
             class_weights = class_weights / class_weights.sum() * len(class_sample_count)
             self.class_weights = class_weights.to(y.device)
             print(f"[Engine] Using class weights: {self.class_weights}")
-            self.loss_function = nn.CrossEntropyLoss(weight=self.class_weights)
         y_hat = self.forward(x)
         batch_loss = self.loss(y_hat, y)
         batch_loss_mean = torch.mean(batch_loss)
