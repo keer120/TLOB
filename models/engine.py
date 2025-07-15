@@ -221,6 +221,14 @@ class Engine(LightningModule):
                 from preprocessing.sbi import save_confusion_matrix
                 cm_path = os.path.join(os.path.dirname(predictions_path), "confusion_matrix.png")
                 save_confusion_matrix(targets, predictions, cm_path)
+                # Display confusion matrix inline
+                import matplotlib.pyplot as plt
+                img = plt.imread(cm_path)
+                plt.figure(figsize=(6, 6))
+                plt.imshow(img)
+                plt.axis('off')
+                plt.title('Confusion Matrix (Evaluation)')
+                plt.show()
             except Exception as e:
                 print(f"Could not plot confusion matrix: {e}")
         self.test_targets = []
