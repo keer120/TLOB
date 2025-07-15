@@ -191,8 +191,8 @@ class Engine(LightningModule):
         self.log("accuracy", class_report["accuracy"])
         self.log("precision", class_report["macro avg"]["precision"])
         self.log("recall", class_report["macro avg"]["recall"])
-        # Only plot confusion matrix during evaluation, not training
-        if getattr(self, 'experiment_type', None) == "EVALUATION":
+        # Only plot confusion matrix during evaluation or fine-tuning, not training
+        if getattr(self, 'experiment_type', None) in ["EVALUATION", "FINETUNING"]:
             try:
                 from preprocessing.sbi import save_confusion_matrix
                 cm_path = os.path.join(os.path.dirname(predictions_path), "confusion_matrix.png")
@@ -204,8 +204,11 @@ class Engine(LightningModule):
         self.test_losses = []  
         self.first_test = False
         test_proba = np.concatenate(self.test_proba)
-        precision, recall, _ = precision_recall_curve(targets, test_proba, pos_label=1)
-        self.plot_pr_curves(recall, precision, self.is_wandb) 
+        if np.isnan(test_proba).any():
+            print("Warning: test_proba contains NaN values. Skipping precision-recall curve plot.")
+        else:
+            precision, recall, _ = precision_recall_curve(targets, test_proba, pos_label=1)
+            self.plot_pr_curves(recall, precision, self.is_wandb)
         
     def configure_optimizers(self):
         if self.model_type == "DEEPLOB":

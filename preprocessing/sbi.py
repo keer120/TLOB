@@ -22,7 +22,7 @@ def get_threshold_for_horizon(horizon):
         return 0.01
 
 def plot_confusion_matrix(y_true, y_pred, save_path=None, title="Confusion Matrix"):
-    cm = confusion_matrix(y_true, y_pred)
+    cm = confusion_matrix(y_true, y_pred, labels=[0, 1, 2])
     disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=["Up", "Stable", "Down"])
     fig, ax = plt.subplots(figsize=(6, 6))
     disp.plot(ax=ax, cmap=plt.cm.Blues, values_format='d')
