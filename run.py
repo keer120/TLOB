@@ -276,6 +276,7 @@ def train(config: Config, trainer: L.Trainer, run=None):
                 num_features=train_input.shape[1],
                 dataset_type=dataset_type,
                 map_location=cst.DEVICE,
+                strict=False,
                 )
         elif model_type == "TLOB":
             model = Engine.load_from_checkpoint(
@@ -296,7 +297,8 @@ def train(config: Config, trainer: L.Trainer, run=None):
                 num_heads=checkpoint["hyper_parameters"]["num_heads"],
                 is_sin_emb=checkpoint["hyper_parameters"]["is_sin_emb"],
                 map_location=cst.DEVICE,
-                len_test_dataloader=len(test_loaders[0])
+                len_test_dataloader=len(test_loaders[0]),
+                strict=False,
                 )
         elif model_type == "BINCTABL":
             model = Engine.load_from_checkpoint(
@@ -313,7 +315,8 @@ def train(config: Config, trainer: L.Trainer, run=None):
                 num_features=train_input.shape[1],
                 dataset_type=dataset_type,
                 map_location=cst.DEVICE,
-                len_test_dataloader=len(test_loaders[0])
+                len_test_dataloader=len(test_loaders[0]),
+                strict=False,
                 )
         elif model_type == "DEEPLOB":
             model = Engine.load_from_checkpoint(
@@ -330,7 +333,8 @@ def train(config: Config, trainer: L.Trainer, run=None):
                 num_features=train_input.shape[1],
                 dataset_type=dataset_type,
                 map_location=cst.DEVICE,
-                len_test_dataloader=len(test_loaders[0])
+                len_test_dataloader=len(test_loaders[0]),
+                strict=False,
                 )
               
     else:
