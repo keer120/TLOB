@@ -215,19 +215,19 @@ class Engine(LightningModule):
         self.log("accuracy", class_report["accuracy"])
         self.log("precision", class_report["macro avg"]["precision"])
         self.log("recall", class_report["macro avg"]["recall"])
-        # Only plot confusion matrix during evaluation or fine-tuning, not training
-        if getattr(self, 'experiment_type', None) in ["EVALUATION", "FINETUNING"]:
-            try:
-                from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
-                import matplotlib.pyplot as plt
-                cm = confusion_matrix(targets, predictions, labels=[0, 1, 2])
-                disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=["Up", "Stable", "Down"])
-                fig, ax = plt.subplots(figsize=(6, 6))
-                disp.plot(ax=ax, cmap=plt.cm.Blues, values_format='d')
-                plt.title('Confusion Matrix (Evaluation)')
-                plt.show()
-            except Exception as e:
-                print(f"Could not plot confusion matrix: {e}")
+        # Always plot confusion matrix after test epoch
+        print("\n=== Confusion Matrix ===")
+        try:
+            from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+            import matplotlib.pyplot as plt
+            cm = confusion_matrix(targets, predictions, labels=[0, 1, 2])
+            disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=["Up", "Stable", "Down"])
+            fig, ax = plt.subplots(figsize=(6, 6))
+            disp.plot(ax=ax, cmap=plt.cm.Blues, values_format='d')
+            plt.title('Confusion Matrix (Evaluation)')
+            plt.show()
+        except Exception as e:
+            print(f"Could not plot confusion matrix: {e}")
         self.test_targets = []
         self.test_predictions = []
         self.test_losses = []  
