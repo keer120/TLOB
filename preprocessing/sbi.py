@@ -233,3 +233,34 @@ def sbi_load(path, seq_size, horizon, all_features):
 # --- Add this function to your evaluation script or after test ---
 def save_confusion_matrix(y_true, y_pred, out_path):
     plot_confusion_matrix(y_true, y_pred, save_path=out_path)
+
+def analyze_thresholds_for_labeling(mid_price, horizon, true_labels=None):
+    """
+    Analyze class distribution and confusion matrix for a range of thresholds.
+    If true_labels are provided, also print confusion matrix between new labels and true_labels.
+    """
+    thresholds = [0.0, 0.00005, 0.0001, 0.0005, 0.001, 0.005]
+    for thresh in thresholds:
+        labels = np.zeros(len(mid_price) - horizon)
+        for i in range(len(mid_price) - horizon):
+            current_price = mid_price[i]
+            future_price = mid_price[i + horizon]
+            pct_change = (future_price - current_price) / current_price
+            if pct_change > thresh:
+                labels[i] = 0  # Up
+            elif pct_change < -thresh:
+                labels[i] = 2  # Down
+            else:
+                labels[i] = 1  # Stable
+        unique, counts = np.unique(labels, return_counts=True)
+        print(f"\nThreshold {thresh}:")
+        print("  Label distribution:", dict(zip(["Up", "Stable", "Down"], counts)))
+        if true_labels is not None:
+            from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+            import matplotlib.pyplot as plt
+            cm = confusion_matrix(true_labels, labels, labels=[0, 1, 2])
+            disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=["Up", "Stable", "Down"])
+            fig, ax = plt.subplots(figsize=(6, 6))
+            disp.plot(ax=ax, cmap=plt.cm.Blues, values_format='d')
+            plt.title(f'Confusion Matrix (True vs. threshold={thresh})')
+            plt.show()
