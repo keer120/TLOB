@@ -220,12 +220,14 @@ class Engine(LightningModule):
         try:
             from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
             import matplotlib.pyplot as plt
+            from IPython.display import display
             cm = confusion_matrix(targets, predictions, labels=[0, 1, 2])
             disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=["Up", "Stable", "Down"])
             fig, ax = plt.subplots(figsize=(6, 6))
             disp.plot(ax=ax, cmap=plt.cm.Blues, values_format='d')
             plt.title('Confusion Matrix (Evaluation)')
-            plt.show()
+            display(fig)
+            plt.close(fig)
         except Exception as e:
             print(f"Could not plot confusion matrix: {e}")
         self.test_targets = []
