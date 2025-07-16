@@ -151,8 +151,8 @@ def sbi_load(path, seq_size, horizon, all_features):
     # For horizon 10, we'll use a simple approach: compare current mid-price with future mid-price
     labels = np.zeros(len(mid_price) - horizon)
     
-    # Use a dynamic threshold based on horizon
-    threshold = 0.0001  # Use 0.0001 for more balanced up/stat/down classes
+    # Use a fixed threshold of 0.0001 for balanced up/stat/down classes
+    threshold = 0.0001  # Chosen for balanced class distribution (see analyze_thresholds_for_labeling)
     print(f"Using horizon={horizon}, threshold for up/down labeling: {threshold}")
 
     for i in range(len(mid_price) - horizon):
