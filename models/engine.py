@@ -90,6 +90,9 @@ class Engine(LightningModule):
     def training_step(self, batch, batch_idx):
         x, y = batch
         y_hat = self.forward(x)
+        # Debug: print shapes for the first 3 batches
+        if batch_idx < 3:
+            print(f"[DEBUG][Batch {batch_idx}] x shape: {x.shape}, y shape: {y.shape}, y_hat shape: {y_hat.shape}")
         batch_loss = self.loss(y_hat, y)
         batch_loss_mean = torch.mean(batch_loss)
         self.train_losses.append(batch_loss_mean.item())
