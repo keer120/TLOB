@@ -72,6 +72,9 @@ class Engine(LightningModule):
         
     def forward(self, x, batch_idx=None):
         output = self.model(x)
+        # Only apply this fix for DEEPLOB
+        if self.model_type == "DEEPLOB" and output.ndim == 3:
+            output = output[:, -1, :]
         return output
     
     @property
