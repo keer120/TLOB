@@ -78,8 +78,7 @@ class DeepLOB(nn.Module):
         self.softmax = nn.Softmax(dim=1)
 
     def forward(self, x):
-        x = x[:, None, :, :]  # none stands for the channel
-
+        x = x[:, None, :, :]  # [batch, 1, seq_len, features]
         x = self.conv1(x)
         x = self.conv2(x)
         x = self.conv3(x)
@@ -88,12 +87,9 @@ class DeepLOB(nn.Module):
         x_inp2 = self.inp2(x)
         x_inp3 = self.inp3(x)
 
-        x = torch.cat((x_inp1, x_inp2, x_inp3), dim=1)
-
-        # Correct reshaping: preserve batch and seq_len
-        x = x.permute(0, 2, 1, 3)  # [batch, seq_len, channels, 1]
-        x = x.squeeze(-1)           # [batch, seq_len, channels]
-        x = x.reshape(x.shape[0], x.shape[1], -1)  # [batch, seq_len, features]
+        x = torch.cat((x_inp1, x_inp2, x_inp3), dim=1)  # [batch, 192, seq_len, 1]
+        x = x.permute(0, 2, 1, 3)  # [batch, seq_len, 192, 1]
+        x = x.squeeze(-1)           # [batch, seq_len, 192]
 
         out, _ = self.lstm(x)
         out = out[:, -1, :]
