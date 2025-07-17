@@ -89,7 +89,7 @@ class DeepLOB(nn.Module):
 
         x = torch.cat((x_inp1, x_inp2, x_inp3), dim=1)  # [batch, 192, seq_len, 1]
         x = x.permute(0, 2, 1, 3)  # [batch, seq_len, 192, 1]
-        x = x.squeeze(-1)           # [batch, seq_len, 192]
+        x = x.contiguous().view(x.shape[0], x.shape[1], -1)  # [batch, seq_len, 192]
 
         out, _ = self.lstm(x)
         out = out[:, -1, :]
