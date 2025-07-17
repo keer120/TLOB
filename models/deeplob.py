@@ -78,18 +78,29 @@ class DeepLOB(nn.Module):
         self.softmax = nn.Softmax(dim=1)
 
     def forward(self, x):
+        print(f"[DEBUG] input x shape: {x.shape}")
         x = x[:, None, :, :]  # [batch, 1, seq_len, features]
+        print(f"[DEBUG] after unsqueeze x shape: {x.shape}")
         x = self.conv1(x)
+        print(f"[DEBUG] after conv1 x shape: {x.shape}")
         x = self.conv2(x)
+        print(f"[DEBUG] after conv2 x shape: {x.shape}")
         x = self.conv3(x)
+        print(f"[DEBUG] after conv3 x shape: {x.shape}")
 
         x_inp1 = self.inp1(x)
+        print(f"[DEBUG] x_inp1 shape: {x_inp1.shape}")
         x_inp2 = self.inp2(x)
+        print(f"[DEBUG] x_inp2 shape: {x_inp2.shape}")
         x_inp3 = self.inp3(x)
+        print(f"[DEBUG] x_inp3 shape: {x_inp3.shape}")
 
-        x = torch.cat((x_inp1, x_inp2, x_inp3), dim=1)  # [batch, 192, seq_len, 1]
-        x = x.permute(0, 2, 1, 3)  # [batch, seq_len, 192, 1]
-        x = x.contiguous().view(x.shape[0], x.shape[1], -1)  # [batch, seq_len, 192]
+        x = torch.cat((x_inp1, x_inp2, x_inp3), dim=1)
+        print(f"[DEBUG] x after concat shape: {x.shape}")
+        x = x.permute(0, 2, 1, 3)  # [batch, seq_len, 192, ?]
+        print(f"[DEBUG] x after permute shape: {x.shape}")
+        x = x.contiguous().view(x.shape[0], x.shape[1], -1)  # [batch, seq_len, features]
+        print(f"[DEBUG] x before LSTM shape: {x.shape}")
 
         out, _ = self.lstm(x)
         out = out[:, -1, :]
