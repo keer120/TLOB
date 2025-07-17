@@ -90,12 +90,12 @@ class DeepLOB(nn.Module):
 
         x = torch.cat((x_inp1, x_inp2, x_inp3), dim=1)
 
-        # x = torch.transpose(x, 1, 2)
-        x = x.permute(0, 2, 1, 3)
-        x = torch.reshape(x, (-1, x.shape[1], x.shape[2]))
+        # Correct reshaping: preserve batch and seq_len
+        x = x.permute(0, 2, 1, 3)  # [batch, seq_len, channels, 1]
+        x = x.squeeze(-1)           # [batch, seq_len, channels]
+        x = x.reshape(x.shape[0], x.shape[1], -1)  # [batch, seq_len, features]
 
         out, _ = self.lstm(x)
-
         out = out[:, -1, :]
         out = self.fc1(out)
         out = self.softmax(out)
